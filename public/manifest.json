@@ -1,0 +1,10 @@
+{
+  "name": "Trachten Locations",
+  "short_name": "Locations",
+  "description": "Suivi des locations de dirndl",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#faf7f2",
+  "theme_color": "#2f4b3c",
+  "icons": []
+}
