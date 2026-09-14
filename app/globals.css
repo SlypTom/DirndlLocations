@@ -1,0 +1,45 @@
+@import "tailwindcss";
+@source "./**/*.{ts,tsx}";
+@source "../components/**/*.{ts,tsx}";
+@source "../lib/**/*.{ts,tsx}";
+
+:root {
+  --background: #faf7f2;
+  --foreground: #1f2a22;
+  --surface: #ffffff;
+  --border-color: #e6ded0;
+  --primary: #2f4b3c;
+  --primary-dark: #1e3327;
+  --accent: #b3811f;
+  --accent-light: #f3e6c8;
+  --danger: #a23b3b;
+  --danger-light: #f5e3e0;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-border: var(--border-color);
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+  --color-accent: var(--accent);
+  --color-accent-light: var(--accent-light);
+  --color-danger: var(--danger);
+  --color-danger-light: var(--danger-light);
+  --font-heading: var(--font-fraunces);
+  --font-sans: var(--font-inter);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.input {
+  @apply w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none;
+}
+
+.input:focus {
+  @apply border-primary;
+}
