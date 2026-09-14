@@ -6,8 +6,10 @@ import { supabase } from "@/lib/supabase/client";
 import type { Item, Rental } from "@/lib/types";
 import StatusBadge from "@/components/StatusBadge";
 import { RENTAL_STATUS_LABELS } from "@/lib/types";
+import type { AppProps } from 'next/app';
+import { Analytics } from '@vercel/analytics/next';
 
-export default function DashboardPage() {
+export default function DashboardPage({ Component, pageProps }: AppProps) {
   const [items, setItems] = useState<Item[]>([]);
   const [overdue, setOverdue] = useState<Rental[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,6 +113,13 @@ export default function DashboardPage() {
         )}
       </div>
     </div>
+  );
+
+  return (
+    <>
+      <Component {...pageProps} />
+      <Analytics />
+    </>
   );
 }
 
