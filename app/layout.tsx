@@ -35,6 +35,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             {children}
           </main>
         </AuthProvider>
+        <Analytics />
       </body>
     </html>
   );
