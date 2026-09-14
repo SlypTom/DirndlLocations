@@ -3,6 +3,7 @@ import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import NavBar from "@/components/NavBar";
+import { Analytics } from "@vercel/analytics/next"
 
 const fraunces = Fraunces({
   variable: "--font-fraunces",
