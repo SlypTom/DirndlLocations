@@ -4,11 +4,8 @@ import { Suspense, useEffect, useMemo, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
+import { todayLocalStr } from "@/lib/dates";
 import type { Customer, Item } from "@/lib/types";
-
-function todayStr() {
-  return new Date().toISOString().slice(0, 10);
-}
 
 export default function NewRentalPage() {
   return (
@@ -26,9 +23,8 @@ function NewRentalForm() {
   const [availableItems, setAvailableItems] = useState<Item[]>([]);
   const [customerId, setCustomerId] = useState(preselectedCustomerId ?? "");
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
-  const [dateDebut, setDateDebut] = useState(todayStr());
-  const [dateFin, setDateFin] = useState(todayStr());
-  const [caution, setCaution] = useState("");
+  const [dateDebut, setDateDebut] = useState(todayLocalStr());
+  const [dateFin, setDateFin] = useState(todayLocalStr());
   const [prixOverride, setPrixOverride] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -79,44 +75,18 @@ function NewRentalForm() {
     setError(null);
     setSaving(true);
 
-    const { data: rental, error: rentalError } = await supabase
-      .from("rentals")
-      .insert({
-        customer_id: customerId,
-        date_debut: dateDebut,
-        date_fin_prevue: dateFin,
-        caution_montant: Number(caution) || 0,
-        prix_total: Number(displayedPrix) || suggestedTotal,
-        statut: "en_cours",
-      })
-      .select()
-      .single();
-
-    if (rentalError || !rental) {
-      setError(rentalError?.message ?? "Erreur lors de la création.");
-      setSaving(false);
-      return;
-    }
-
-    const rentalItemsPayload = selectedItems.map((item) => ({
-      rental_id: rental.id,
-      item_id: item.id,
-      prix_unitaire: item.prix_location,
-    }));
-
-    const { error: itemsLinkError } = await supabase
-      .from("rental_items")
-      .insert(rentalItemsPayload);
-
-    const { error: statusError } = await supabase
-      .from("items")
-      .update({ statut: "loue" })
-      .in("id", selectedItemIds);
+    const { error: rpcError } = await supabase.rpc("create_rental", {
+      p_customer_id: customerId,
+      p_date_debut: dateDebut,
+      p_date_fin_prevue: dateFin,
+      p_prix_total: Number(displayedPrix) || suggestedTotal,
+      p_item_ids: selectedItemIds,
+    });
 
     setSaving(false);
 
-    if (itemsLinkError || statusError) {
-      setError(itemsLinkError?.message ?? statusError?.message ?? "Erreur.");
+    if (rpcError) {
+      setError(rpcError.message);
       return;
     }
 
@@ -210,29 +180,17 @@ function NewRentalForm() {
           </label>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <label className="block text-sm font-medium">
-            Caution (€)
-            <input
-              type="number"
-              step="0.01"
-              value={caution}
-              onChange={(e) => setCaution(e.target.value)}
-              className="input mt-1"
-            />
-          </label>
-          <label className="block text-sm font-medium">
-            Prix total (€)
-            <input
-              type="number"
-              step="0.01"
-              value={displayedPrix}
-              onChange={(e) => setPrixOverride(e.target.value)}
-              className="input mt-1"
-              placeholder={String(suggestedTotal)}
-            />
-          </label>
-        </div>
+        <label className="block text-sm font-medium">
+          Prix total (€)
+          <input
+            type="number"
+            step="0.01"
+            value={displayedPrix}
+            onChange={(e) => setPrixOverride(e.target.value)}
+            className="input mt-1"
+            placeholder={String(suggestedTotal)}
+          />
+        </label>
 
         {error && (
           <p className="rounded-md bg-danger-light px-4 py-3 text-sm text-danger">

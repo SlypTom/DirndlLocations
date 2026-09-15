@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { uploadItemPhoto } from "@/lib/item-photos";
+import { deleteItemPhoto, uploadItemPhoto } from "@/lib/item-photos";
 import ItemPhoto from "@/components/ItemPhoto";
 
 export interface ItemFormValues {
@@ -88,7 +88,14 @@ export default function ItemForm({
     });
 
     setSaving(false);
-    if (submitError) setError(submitError);
+    if (submitError) {
+      setError(submitError);
+      return;
+    }
+
+    if (photo && initialPhotoUrl && initialPhotoUrl !== photo_url) {
+      deleteItemPhoto(initialPhotoUrl);
+    }
   }
 
   return (

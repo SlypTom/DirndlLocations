@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
+import { todayLocalStr } from "@/lib/dates";
 import type { Item, Rental } from "@/lib/types";
 import StatusBadge from "@/components/StatusBadge";
 import { RENTAL_STATUS_LABELS } from "@/lib/types";
@@ -15,7 +16,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function load() {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = todayLocalStr();
 
       const [itemsRes, rentalsRes] = await Promise.all([
         supabase.from("items").select("*"),

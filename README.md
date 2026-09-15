@@ -8,10 +8,12 @@ CSS et Supabase (base de données, stockage des photos, authentification).
 
 1. Va sur https://supabase.com, crée un compte et un nouveau projet.
 2. Dans **SQL Editor**, colle le contenu de `supabase/schema.sql` et exécute-le.
-   Ça crée les tables `items`, `customers`, `rentals`, `rental_items` et les
-   règles d'accès.
+   Ça crée les tables `items`, `customers`, `rentals`, `rental_items`, les
+   règles d'accès et les fonctions utilisées pour créer/terminer/annuler une
+   location.
 3. Dans **Storage**, crée un bucket nommé `item-photos`, coché **Public**
-   (pour que les photos s'affichent directement).
+   (pour que les photos s'affichent directement). Les policies qui autorisent
+   l'équipe à uploader/supprimer des photos sont déjà dans `schema.sql`.
 4. Dans **Authentication > Users**, ajoute un compte pour chaque membre de
    l'équipe (email + mot de passe) — c'est ce qui servira à se connecter à
    l'appli.
@@ -61,16 +63,20 @@ app/
   items/[id]/page.tsx      détail d'un article (modifier / supprimer)
   customers/page.tsx      liste des clients (modifier / supprimer)
   customers/new/page.tsx    ajouter un client
-  rentals/page.tsx        liste des locations, marquer un retour
+  rentals/page.tsx        liste des locations en cours (modifier / marquer le
+                            retour / annuler)
   rentals/new/page.tsx      créer une location
 lib/
   supabase/client.ts    connexion à Supabase
   auth-context.tsx      gère la session et protège les pages
   types.ts              types TypeScript des données
+  dates.ts              date du jour en heure locale (pas UTC)
+  item-photos.ts        upload / suppression des photos d'articles
 components/
-  NavBar.tsx, StatusBadge.tsx
+  NavBar.tsx, StatusBadge.tsx, ItemForm.tsx, ItemPhoto.tsx
 supabase/
-  schema.sql             à exécuter une fois dans Supabase
+  schema.sql             tables, policies et fonctions RPC — rejouable sans
+                            risque, à réexécuter à chaque mise à jour du fichier
 ```
 
 ## Pour la suite (idées d'améliorations)

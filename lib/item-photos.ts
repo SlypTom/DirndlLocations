@@ -15,3 +15,12 @@ export async function uploadItemPhoto(
   const { data } = supabase.storage.from("item-photos").getPublicUrl(path);
   return { url: data.publicUrl };
 }
+
+// Best-effort: failures are swallowed so a save/delete never fails just because cleanup couldn't.
+export async function deleteItemPhoto(url: string): Promise<void> {
+  const marker = "/storage/v1/object/public/item-photos/";
+  const idx = url.indexOf(marker);
+  if (idx === -1) return;
+  const path = decodeURIComponent(url.slice(idx + marker.length));
+  await supabase.storage.from("item-photos").remove([path]);
+}

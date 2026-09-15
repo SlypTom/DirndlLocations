@@ -37,8 +37,6 @@ export interface Rental {
   date_debut: string;
   date_fin_prevue: string;
   date_retour_reelle: string | null;
-  caution_montant: number;
-  caution_rendue: boolean;
   prix_total: number;
   statut: RentalStatus;
   notes: string | null;

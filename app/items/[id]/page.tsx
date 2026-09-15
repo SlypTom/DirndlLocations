@@ -9,6 +9,7 @@ import { ITEM_STATUS_LABELS } from "@/lib/types";
 import StatusBadge from "@/components/StatusBadge";
 import ItemPhoto from "@/components/ItemPhoto";
 import ItemForm, { type ItemFormPayload } from "@/components/ItemForm";
+import { deleteItemPhoto } from "@/lib/item-photos";
 
 const STATUS_OPTIONS: ItemStatus[] = [
   "disponible",
@@ -94,6 +95,9 @@ export default function ItemDetailPage() {
         setError(error.message);
       }
       return;
+    }
+    if (item.photo_url) {
+      deleteItemPhoto(item.photo_url);
     }
     router.push("/items");
   }

@@ -3,15 +3,26 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
+import { todayLocalStr } from "@/lib/dates";
 import type { Rental } from "@/lib/types";
 import { RENTAL_STATUS_LABELS } from "@/lib/types";
 import StatusBadge from "@/components/StatusBadge";
+
+interface EditForm {
+  date_debut: string;
+  date_fin_prevue: string;
+  prix_total: string;
+}
 
 export default function RentalsPage() {
   const [rentals, setRentals] = useState<Rental[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [returning, setReturning] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<EditForm | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   useEffect(() => {
     load();
@@ -30,42 +41,85 @@ export default function RentalsPage() {
   }
 
   function isOverdue(rental: Rental) {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayLocalStr();
     return rental.statut === "en_cours" && rental.date_fin_prevue < today;
+  }
+
+  function startEdit(rental: Rental) {
+    setError(null);
+    setEditingId(rental.id);
+    setEditForm({
+      date_debut: rental.date_debut,
+      date_fin_prevue: rental.date_fin_prevue,
+      prix_total: String(rental.prix_total),
+    });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditForm(null);
+  }
+
+  function updateEditForm<K extends keyof EditForm>(key: K, value: string) {
+    setEditForm((f) => (f ? { ...f, [key]: value } : f));
+  }
+
+  async function saveEdit(id: string) {
+    if (!editForm) return;
+    setSavingEdit(true);
+    setError(null);
+    const payload = {
+      date_debut: editForm.date_debut,
+      date_fin_prevue: editForm.date_fin_prevue,
+      prix_total: Number(editForm.prix_total) || 0,
+    };
+    const { error } = await supabase
+      .from("rentals")
+      .update(payload)
+      .eq("id", id);
+    setSavingEdit(false);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    setRentals((cur) => cur.map((r) => (r.id === id ? { ...r, ...payload } : r)));
+    cancelEdit();
   }
 
   async function markReturned(rental: Rental) {
     setReturning(rental.id);
-    const today = new Date().toISOString().slice(0, 10);
-
-    const { error: rentalError } = await supabase
-      .from("rentals")
-      .update({ date_retour_reelle: today, statut: "terminee" })
-      .eq("id", rental.id);
-
-    if (rentalError) {
-      setError(rentalError.message);
-      setReturning(null);
+    setError(null);
+    const { error } = await supabase.rpc("complete_rental", {
+      p_rental_id: rental.id,
+      p_date_retour: todayLocalStr(),
+    });
+    setReturning(null);
+    if (error) {
+      setError(error.message);
       return;
     }
-
-    const itemIds = (rental.rental_items ?? []).map((ri) => ri.item_id);
-    if (itemIds.length > 0) {
-      const { error: itemsError } = await supabase
-        .from("items")
-        .update({ statut: "nettoyage" })
-        .in("id", itemIds);
-      if (itemsError) setError(itemsError.message);
-    }
-
-    const { error: unlinkError } = await supabase
-      .from("rental_items")
-      .delete()
-      .eq("rental_id", rental.id);
-    if (unlinkError) setError(unlinkError.message);
-
     await load();
-    setReturning(null);
+  }
+
+  async function cancelRental(rental: Rental) {
+    if (
+      !window.confirm(
+        `Annuler la location de ${rental.customer?.nom ?? "ce client"} ? Les articles redeviendront disponibles.`
+      )
+    )
+      return;
+
+    setCancelling(rental.id);
+    setError(null);
+    const { error } = await supabase.rpc("cancel_rental", {
+      p_rental_id: rental.id,
+    });
+    setCancelling(null);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    await load();
   }
 
   return (
@@ -96,6 +150,7 @@ export default function RentalsPage() {
         <div className="space-y-3">
           {rentals.map((rental) => {
             const overdue = isOverdue(rental);
+            const isEditing = editingId === rental.id && editForm;
             return (
               <div
                 key={rental.id}
@@ -127,34 +182,105 @@ export default function RentalsPage() {
                   />
                 </div>
 
-                <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-foreground/70 sm:grid-cols-4">
-                  <span>
-                    Début :{" "}
-                    {new Date(rental.date_debut).toLocaleDateString("fr-FR")}
-                  </span>
-                  <span>
-                    Retour prévu :{" "}
-                    {new Date(rental.date_fin_prevue).toLocaleDateString(
-                      "fr-FR"
-                    )}
-                  </span>
-                  <span>Prix : {rental.prix_total} €</span>
-                  <span>
-                    Caution : {rental.caution_montant} € (
-                    {rental.caution_rendue ? "rendue" : "conservée"})
-                  </span>
-                </div>
+                {isEditing ? (
+                  <div className="mt-3 space-y-3">
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      <label className="block text-xs font-medium">
+                        Début
+                        <input
+                          type="date"
+                          value={editForm.date_debut}
+                          onChange={(e) =>
+                            updateEditForm("date_debut", e.target.value)
+                          }
+                          className="input mt-1"
+                        />
+                      </label>
+                      <label className="block text-xs font-medium">
+                        Retour prévu
+                        <input
+                          type="date"
+                          value={editForm.date_fin_prevue}
+                          onChange={(e) =>
+                            updateEditForm("date_fin_prevue", e.target.value)
+                          }
+                          className="input mt-1"
+                        />
+                      </label>
+                      <label className="block text-xs font-medium">
+                        Prix total (€)
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={editForm.prix_total}
+                          onChange={(e) =>
+                            updateEditForm("prix_total", e.target.value)
+                          }
+                          className="input mt-1"
+                        />
+                      </label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => saveEdit(rental.id)}
+                        disabled={savingEdit}
+                        className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-dark disabled:opacity-60"
+                      >
+                        {savingEdit ? "Enregistrement..." : "Enregistrer"}
+                      </button>
+                      <button
+                        onClick={cancelEdit}
+                        className="rounded-md px-3 py-1.5 text-xs font-medium text-foreground/70 hover:bg-background"
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-foreground/70 sm:grid-cols-3">
+                      <span>
+                        Début :{" "}
+                        {new Date(rental.date_debut).toLocaleDateString(
+                          "fr-FR"
+                        )}
+                      </span>
+                      <span>
+                        Retour prévu :{" "}
+                        {new Date(rental.date_fin_prevue).toLocaleDateString(
+                          "fr-FR"
+                        )}
+                      </span>
+                      <span>Prix : {rental.prix_total} €</span>
+                    </div>
 
-                {rental.statut === "en_cours" && (
-                  <button
-                    onClick={() => markReturned(rental)}
-                    disabled={returning === rental.id}
-                    className="mt-3 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-dark disabled:opacity-60"
-                  >
-                    {returning === rental.id
-                      ? "Enregistrement..."
-                      : "Marquer le retour"}
-                  </button>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={() => markReturned(rental)}
+                        disabled={returning === rental.id}
+                        className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-dark disabled:opacity-60"
+                      >
+                        {returning === rental.id
+                          ? "Enregistrement..."
+                          : "Marquer le retour"}
+                      </button>
+                      <button
+                        onClick={() => startEdit(rental)}
+                        className="rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-accent-light"
+                      >
+                        Modifier
+                      </button>
+                      <button
+                        onClick={() => cancelRental(rental)}
+                        disabled={cancelling === rental.id}
+                        className="rounded-md border border-danger px-3 py-1.5 text-xs font-medium text-danger hover:bg-danger-light disabled:opacity-60"
+                      >
+                        {cancelling === rental.id
+                          ? "Annulation..."
+                          : "Annuler la location"}
+                      </button>
+                    </div>
+                  </>
                 )}
               </div>
             );
