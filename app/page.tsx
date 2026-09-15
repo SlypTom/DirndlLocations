@@ -51,7 +51,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="font-heading text-3xl text-primary-dark">
           Tableau de bord
         </h1>
@@ -93,7 +93,7 @@ export default function DashboardPage() {
               <Link
                 key={rental.id}
                 href="/rentals"
-                className="flex items-center justify-between px-4 py-3 text-sm hover:bg-danger-light/40"
+                className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm hover:bg-danger-light/40"
               >
                 <span>
                   {rental.customer?.nom ?? "Client inconnu"} — retour prévu

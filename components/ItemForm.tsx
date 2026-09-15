@@ -101,18 +101,18 @@ export default function ItemForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <Field label="Photo (optionnel)">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <ItemPhoto
             url={photoPreview}
             alt={form.reference || "Aperçu de l'article"}
-            className="h-20 w-20 rounded-md border border-border"
+            className="h-20 w-20 shrink-0 rounded-md border border-border"
           />
           <input
             type="file"
             accept="image/*"
             capture="environment"
             onChange={(e) => setPhoto(e.target.files?.[0] ?? null)}
-            className="text-sm"
+            className="max-w-full text-sm"
           />
         </div>
       </Field>
@@ -176,7 +176,7 @@ export default function ItemForm({
         </p>
       )}
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button
           type="submit"
           disabled={saving}

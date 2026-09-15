@@ -170,18 +170,18 @@ export default function ItemDetailPage() {
         </>
       ) : (
         <div className="space-y-6">
-          <div className="flex items-start gap-4">
+          <div className="flex flex-col items-start gap-4 sm:flex-row">
             <ItemPhoto
               url={item.photo_url}
               alt={item.reference}
-              className="h-32 w-32 shrink-0 rounded-lg border border-border"
+              className="h-24 w-24 shrink-0 rounded-lg border border-border sm:h-32 sm:w-32"
             />
-            <div className="space-y-2">
+            <div className="min-w-0 space-y-2">
               <h1 className="font-heading text-2xl text-primary-dark">
                 {item.reference}
               </h1>
               <p className="text-foreground/70">{item.modele}</p>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <StatusBadge
                   status={item.statut}
                   label={ITEM_STATUS_LABELS[item.statut]}
@@ -220,7 +220,7 @@ export default function ItemDetailPage() {
             </div>
           </dl>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => setEditing(true)}
               className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"

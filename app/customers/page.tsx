@@ -121,7 +121,7 @@ export default function CustomersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="font-heading text-3xl text-primary-dark">Clients</h1>
         <Link
           href="/customers/new"
@@ -218,11 +218,11 @@ export default function CustomersPage() {
             ) : (
               <div
                 key={c.id}
-                className="flex items-center justify-between gap-3 px-4 py-3 text-sm"
+                className="flex flex-col gap-2 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
               >
-                <div>
-                  <p className="font-medium">{c.nom}</p>
-                  <p className="text-foreground/60">
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{c.nom}</p>
+                  <p className="truncate text-foreground/60">
                     {[c.telephone, c.email, c.adresse].filter(Boolean).join(" · ") ||
                       "—"}
                   </p>

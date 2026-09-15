@@ -60,7 +60,7 @@ export default function ItemsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="font-heading text-3xl text-primary-dark">Articles</h1>
         <Link
           href="/items/new"
@@ -94,65 +94,117 @@ export default function ItemsPage() {
           Aucun article pour l&apos;instant.
         </p>
       ) : viewMode === "list" ? (
-        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-foreground/60">
-                <th className="px-4 py-3 font-medium">Référence</th>
-                <th className="px-4 py-3 font-medium">Modèle</th>
-                <th className="px-4 py-3 font-medium">Taille</th>
-                <th className="px-4 py-3 font-medium">Couleur</th>
-                <th className="px-4 py-3 font-medium">Prix</th>
-                <th className="px-4 py-3 font-medium">Statut</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((item) => (
-                <tr
-                  key={item.id}
-                  onClick={() => router.push(`/items/${item.id}`)}
-                  className="cursor-pointer border-b border-border last:border-0 hover:bg-background/60"
+        <>
+          {/* Cartes empilées sur mobile : un tableau serait illisible en dessous de sm. */}
+          <div className="space-y-2 sm:hidden">
+            {filtered.map((item) => (
+              <div
+                key={item.id}
+                onClick={() => router.push(`/items/${item.id}`)}
+                className="cursor-pointer rounded-lg border border-border bg-surface p-3"
+              >
+                <div className="flex items-center gap-3">
+                  <ItemPhoto
+                    url={item.photo_url}
+                    alt={item.reference}
+                    className="h-12 w-12 shrink-0 rounded-md border border-border"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium">{item.reference}</p>
+                    <p className="truncate text-sm text-foreground/60">
+                      {item.modele} — {item.taille}, {item.couleur}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-sm font-medium">
+                    {item.prix_location} €
+                  </span>
+                </div>
+                <div
+                  className="mt-2 flex items-center gap-2"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <td className="px-4 py-3 font-medium">
-                    <div className="flex items-center gap-3">
-                      <ItemPhoto
-                        url={item.photo_url}
-                        alt={item.reference}
-                        className="h-10 w-10 shrink-0 rounded-md border border-border"
-                      />
-                      {item.reference}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">{item.modele}</td>
-                  <td className="px-4 py-3">{item.taille}</td>
-                  <td className="px-4 py-3">{item.couleur}</td>
-                  <td className="px-4 py-3">{item.prix_location} €</td>
-                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center gap-2">
-                      <StatusBadge
-                        status={item.statut}
-                        label={ITEM_STATUS_LABELS[item.statut]}
-                      />
-                      <select
-                        value={item.statut}
-                        onChange={(e) =>
-                          updateStatus(item.id, e.target.value as ItemStatus)
-                        }
-                        className="rounded-md border border-border bg-background px-2 py-1 text-xs"
-                      >
-                        {STATUS_OPTIONS.map((s) => (
-                          <option key={s} value={s}>
-                            {ITEM_STATUS_LABELS[s]}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </td>
+                  <StatusBadge
+                    status={item.statut}
+                    label={ITEM_STATUS_LABELS[item.statut]}
+                  />
+                  <select
+                    value={item.statut}
+                    onChange={(e) =>
+                      updateStatus(item.id, e.target.value as ItemStatus)
+                    }
+                    className="rounded-md border border-border bg-background px-2 py-1 text-xs"
+                  >
+                    {STATUS_OPTIONS.map((s) => (
+                      <option key={s} value={s}>
+                        {ITEM_STATUS_LABELS[s]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden overflow-x-auto rounded-lg border border-border bg-surface sm:block">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-foreground/60">
+                  <th className="px-4 py-3 font-medium">Référence</th>
+                  <th className="px-4 py-3 font-medium">Modèle</th>
+                  <th className="px-4 py-3 font-medium">Taille</th>
+                  <th className="px-4 py-3 font-medium">Couleur</th>
+                  <th className="px-4 py-3 font-medium">Prix</th>
+                  <th className="px-4 py-3 font-medium">Statut</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filtered.map((item) => (
+                  <tr
+                    key={item.id}
+                    onClick={() => router.push(`/items/${item.id}`)}
+                    className="cursor-pointer border-b border-border last:border-0 hover:bg-background/60"
+                  >
+                    <td className="px-4 py-3 font-medium">
+                      <div className="flex items-center gap-3">
+                        <ItemPhoto
+                          url={item.photo_url}
+                          alt={item.reference}
+                          className="h-10 w-10 shrink-0 rounded-md border border-border"
+                        />
+                        {item.reference}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">{item.modele}</td>
+                    <td className="px-4 py-3">{item.taille}</td>
+                    <td className="px-4 py-3">{item.couleur}</td>
+                    <td className="px-4 py-3">{item.prix_location} €</td>
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center gap-2">
+                        <StatusBadge
+                          status={item.statut}
+                          label={ITEM_STATUS_LABELS[item.statut]}
+                        />
+                        <select
+                          value={item.statut}
+                          onChange={(e) =>
+                            updateStatus(item.id, e.target.value as ItemStatus)
+                          }
+                          className="rounded-md border border-border bg-background px-2 py-1 text-xs"
+                        >
+                          {STATUS_OPTIONS.map((s) => (
+                            <option key={s} value={s}>
+                              {ITEM_STATUS_LABELS[s]}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {filtered.map((item) => (
