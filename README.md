@@ -1,5 +1,7 @@
 # Dirndl Locations
 
+*Read this in [English](README.en.md).*
+
 Application interne de gestion de location de dirndls (tenues traditionnelles
 autrichiennes) : suivi du stock d'articles, des clients et des locations en
 cours, du prêt jusqu'au retour.
