@@ -73,7 +73,7 @@ function NewRentalForm() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!customerId || selectedItemIds.length === 0 || !dateFin) {
-      setError("Choisis une cliente, au moins un article et une date de retour.");
+      setError("Choisis un client, au moins un article et une date de retour.");
       return;
     }
     setError(null);
@@ -135,7 +135,7 @@ function NewRentalForm() {
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <label className="block text-sm font-medium">
-          Cliente
+          Client
           <div className="mt-1 flex gap-2">
             <select
               value={customerId}
@@ -153,7 +153,7 @@ function NewRentalForm() {
               href="/customers/new?returnTo=/rentals/new"
               className="whitespace-nowrap rounded-md border border-border px-3 py-2 text-sm hover:bg-accent-light"
             >
-              + Nouvelle
+              + Nouveau
             </Link>
           </div>
         </label>

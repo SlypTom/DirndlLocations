@@ -108,7 +108,7 @@ export default function RentalsPage() {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="font-medium">
-                      {rental.customer?.nom ?? "Cliente inconnue"}
+                      {rental.customer?.nom ?? "Client inconnu"}
                     </p>
                     <p className="text-sm text-foreground/60">
                       {(rental.rental_items ?? [])

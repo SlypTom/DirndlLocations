@@ -52,25 +52,30 @@ create table if not exists rental_items (
   primary key (rental_id, item_id)
 );
 
--- Row Level Security : accès complet réservé aux utilisatrices connectées
+-- Row Level Security : accès complet réservé aux utilisateurs connectés
 -- (l'équipe du magasin), ce qui suffit pour un usage interne.
 alter table items enable row level security;
 alter table customers enable row level security;
 alter table rentals enable row level security;
 alter table rental_items enable row level security;
 
+drop policy if exists "Équipe : accès complet aux articles" on items;
 create policy "Équipe : accès complet aux articles" on items
   for all using (auth.role() = 'authenticated')
   with check (auth.role() = 'authenticated');
 
-create policy "Équipe : accès complet aux clientes" on customers
+drop policy if exists "Équipe : accès complet aux clientes" on customers;
+drop policy if exists "Équipe : accès complet aux clients" on customers;
+create policy "Équipe : accès complet aux clients" on customers
   for all using (auth.role() = 'authenticated')
   with check (auth.role() = 'authenticated');
 
+drop policy if exists "Équipe : accès complet aux locations" on rentals;
 create policy "Équipe : accès complet aux locations" on rentals
   for all using (auth.role() = 'authenticated')
   with check (auth.role() = 'authenticated');
 
+drop policy if exists "Équipe : accès complet aux lignes de location" on rental_items;
 create policy "Équipe : accès complet aux lignes de location" on rental_items
   for all using (auth.role() = 'authenticated')
   with check (auth.role() = 'authenticated');

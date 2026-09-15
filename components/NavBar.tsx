@@ -9,7 +9,7 @@ const LINKS = [
   { href: "/", label: "Tableau de bord" },
   { href: "/rentals", label: "Locations" },
   { href: "/items", label: "Articles" },
-  { href: "/customers", label: "Clientes" },
+  { href: "/customers", label: "Clients" },
 ];
 
 export default function NavBar() {

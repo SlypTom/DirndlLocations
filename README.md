@@ -1,6 +1,6 @@
 # Trachten Locations
 
-Suivi interne des locations de dirndl : articles, clientes, locations en cours,
+Suivi interne des locations de dirndl : articles, clients, locations en cours,
 retours en retard. Construit avec Next.js (App Router), TypeScript, Tailwind
 CSS et Supabase (base de données, stockage des photos, authentification).
 
@@ -56,10 +56,11 @@ Le plus simple est [Vercel](https://vercel.com) :
 app/
   page.tsx              tableau de bord (compteurs, retards)
   login/page.tsx         connexion
-  items/page.tsx          liste des articles
+  items/page.tsx          liste des articles (vue liste/galerie)
   items/new/page.tsx        ajouter un article (avec photo)
-  customers/page.tsx      liste des clientes
-  customers/new/page.tsx    ajouter une cliente
+  items/[id]/page.tsx      détail d'un article (modifier / supprimer)
+  customers/page.tsx      liste des clients (modifier / supprimer)
+  customers/new/page.tsx    ajouter un client
   rentals/page.tsx        liste des locations, marquer un retour
   rentals/new/page.tsx      créer une location
 lib/
@@ -76,7 +77,6 @@ supabase/
 
 - Génération d'un QR code par article + scan à la caméra pour aller plus
   vite au comptoir (`qrcode` pour générer, `html5-qrcode` pour scanner).
-- Page de détail/modification d'un article.
 - Rappels automatiques avant une date de retour (nécessite une fonction
   planifiée côté Supabase ou un service externe).
 - Export CSV des locations pour la compta.

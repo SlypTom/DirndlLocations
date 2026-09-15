@@ -95,7 +95,7 @@ export default function DashboardPage() {
                 className="flex items-center justify-between px-4 py-3 text-sm hover:bg-danger-light/40"
               >
                 <span>
-                  {rental.customer?.nom ?? "Cliente inconnue"} — retour prévu
+                  {rental.customer?.nom ?? "Client inconnu"} — retour prévu
                   le{" "}
                   {new Date(rental.date_fin_prevue).toLocaleDateString(
                     "fr-FR"
