@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import type { Customer, Item } from "@/lib/types";
@@ -11,10 +11,20 @@ function todayStr() {
 }
 
 export default function NewRentalPage() {
+  return (
+    <Suspense>
+      <NewRentalForm />
+    </Suspense>
+  );
+}
+
+function NewRentalForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const preselectedCustomerId = searchParams.get("customerId");
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [availableItems, setAvailableItems] = useState<Item[]>([]);
-  const [customerId, setCustomerId] = useState("");
+  const [customerId, setCustomerId] = useState(preselectedCustomerId ?? "");
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   const [dateDebut, setDateDebut] = useState(todayStr());
   const [dateFin, setDateFin] = useState(todayStr());
@@ -140,7 +150,7 @@ export default function NewRentalPage() {
               ))}
             </select>
             <Link
-              href="/customers/new"
+              href="/customers/new?returnTo=/rentals/new"
               className="whitespace-nowrap rounded-md border border-border px-3 py-2 text-sm hover:bg-accent-light"
             >
               + Nouvelle

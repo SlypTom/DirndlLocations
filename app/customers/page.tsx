@@ -25,7 +25,7 @@ export default function CustomersPage() {
   }, []);
 
   const filtered = customers.filter((c) =>
-    `${c.nom} ${c.telephone ?? ""} ${c.email ?? ""}`
+    `${c.nom} ${c.telephone ?? ""} ${c.email ?? ""} ${c.adresse ?? ""}`
       .toLowerCase()
       .includes(search.toLowerCase())
   );
@@ -68,7 +68,8 @@ export default function CustomersPage() {
             <div key={c.id} className="px-4 py-3 text-sm">
               <p className="font-medium">{c.nom}</p>
               <p className="text-foreground/60">
-                {[c.telephone, c.email].filter(Boolean).join(" · ") || "—"}
+                {[c.telephone, c.email, c.adresse].filter(Boolean).join(" · ") ||
+                  "—"}
               </p>
             </div>
           ))}

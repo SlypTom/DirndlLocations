@@ -19,6 +19,7 @@ export interface Customer {
   nom: string;
   telephone: string | null;
   email: string | null;
+  adresse: string | null;
   notes: string | null;
   created_at: string;
 }

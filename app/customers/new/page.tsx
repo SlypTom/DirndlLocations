@@ -1,15 +1,31 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 
 export default function NewCustomerPage() {
+  return (
+    <Suspense>
+      <NewCustomerForm />
+    </Suspense>
+  );
+}
+
+function isSafeReturnPath(path: string | null): path is string {
+  return !!path && path.startsWith("/") && !path.startsWith("//");
+}
+
+function NewCustomerForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawReturnTo = searchParams.get("returnTo");
+  const returnTo = isSafeReturnPath(rawReturnTo) ? rawReturnTo : null;
   const [form, setForm] = useState({
     nom: "",
     telephone: "",
     email: "",
+    adresse: "",
     notes: "",
   });
   const [error, setError] = useState<string | null>(null);
@@ -27,18 +43,28 @@ export default function NewCustomerPage() {
     }
     setError(null);
     setSaving(true);
-    const { error: insertError } = await supabase.from("customers").insert({
-      nom: form.nom,
-      telephone: form.telephone || null,
-      email: form.email || null,
-      notes: form.notes || null,
-    });
+    const { data, error: insertError } = await supabase
+      .from("customers")
+      .insert({
+        nom: form.nom,
+        telephone: form.telephone || null,
+        email: form.email || null,
+        adresse: form.adresse || null,
+        notes: form.notes || null,
+      })
+      .select()
+      .single();
     setSaving(false);
-    if (insertError) {
-      setError(insertError.message);
+    if (insertError || !data) {
+      setError(insertError?.message ?? "Erreur lors de la création.");
       return;
     }
-    router.push("/customers");
+
+    if (returnTo) {
+      router.push(`${returnTo}?customerId=${data.id}`);
+    } else {
+      router.push("/customers");
+    }
   }
 
   return (
@@ -71,6 +97,15 @@ export default function NewCustomerPage() {
             value={form.email}
             onChange={(e) => update("email", e.target.value)}
             className="input mt-1"
+          />
+        </label>
+        <label className="block text-sm font-medium">
+          Adresse
+          <textarea
+            value={form.adresse}
+            onChange={(e) => update("adresse", e.target.value)}
+            className="input mt-1"
+            rows={2}
           />
         </label>
         <label className="block text-sm font-medium">

@@ -22,9 +22,13 @@ create table if not exists customers (
   nom text not null,
   telephone text,
   email text,
+  adresse text,
   notes text,
   created_at timestamptz not null default now()
 );
+
+-- Si la table customers existait déjà avant l'ajout du champ adresse.
+alter table customers add column if not exists adresse text;
 
 create table if not exists rentals (
   id uuid primary key default gen_random_uuid(),
