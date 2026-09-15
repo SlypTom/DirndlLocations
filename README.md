@@ -1,70 +1,68 @@
 # Dirndl Locations
 
-*Read this in [English](README.en.md).*
+*Lire en [français](README.md).*
 
-Application interne de gestion de location de dirndls (tenues traditionnelles
-autrichiennes) : suivi du stock d'articles, des clients et des locations en
-cours, du prêt jusqu'au retour.
+Internal rental-management app for dirndls (traditional Austrian dresses):
+tracks the item stock, customers, and active rentals from checkout through
+return.
 
-Construite avec Next.js (App Router) et Supabase, pensée pour un usage
-quotidien en boutique sur iPad et MacBook.
+Built with Next.js (App Router) and Supabase, designed for daily use in-store
+on iPad and MacBook.
 
-## Fonctionnalités
+## Features
 
-**Articles**
-- Vue liste ou galerie photo, recherche par référence / modèle / taille / couleur
-- Fiche détail avec modification et suppression
-- Statuts de cycle de vie : disponible, loué, à nettoyer, en réparation
+**Items**
+- List or photo-gallery view, search by reference / model / size / color
+- Detail page with edit and delete
+- Lifecycle statuses: available, rented, needs cleaning, under repair
 
-**Locations**
-- Création avec sélection multi-articles (recherche intégrée, articles déjà
-  choisis toujours visibles), client existant ou nouveau créé à la volée
-- Retour et annulation en un clic — les articles repassent automatiquement
-  au bon statut
-- Modification des dates et du prix directement depuis la liste
-- Détection des retards
+**Rentals**
+- Create with multi-item selection (built-in search, already-picked items
+  always visible), pick an existing customer or create one on the fly
+- One-click return and cancellation — items automatically flip to the right
+  status
+- Edit dates and price directly from the list
+- Overdue detection
 
-**Clients**
-- Fiche complète (contact, adresse, notes), modification et suppression
-  inline
+**Customers**
+- Full profile (contact info, address, notes), inline edit and delete
 
-**Tableau de bord**
-- Compteurs de stock par statut, retours en retard à traiter en priorité
+**Dashboard**
+- Stock counts by status, overdue returns surfaced first
 
-## Stack technique
+## Tech stack
 
-| Domaine        | Choix                                             |
-| -------------- | -------------------------------------------------- |
-| Framework      | Next.js 16 (App Router), React 19, TypeScript      |
-| Style          | Tailwind CSS 4                                     |
+| Area           | Choice                                              |
+| -------------- | ---------------------------------------------------- |
+| Framework      | Next.js 16 (App Router), React 19, TypeScript        |
+| Styling        | Tailwind CSS 4                                       |
 | Backend        | Supabase (Postgres, Auth, Storage, Row Level Security) |
-| Hébergement    | Vercel                                             |
+| Hosting        | Vercel                                               |
 
-Les opérations qui touchent plusieurs tables (créer une location, la
-terminer, l'annuler) passent par des fonctions Postgres transactionnelles
-(`supabase/schema.sql`) plutôt que des appels séparés côté client : soit tout
-est appliqué, soit rien ne l'est, et le verrouillage des lignes empêche deux
-personnes de louer le même article en même temps.
+Operations that touch multiple tables (creating a rental, completing it,
+cancelling it) go through transactional Postgres functions
+(`supabase/schema.sql`) instead of separate client-side calls: either
+everything is applied or nothing is, and row locking prevents two people from
+renting out the same item at the same time.
 
-## Démarrage rapide
+## Getting started
 
-### 1. Créer le projet Supabase
+### 1. Create the Supabase project
 
-1. Crée un compte et un projet sur [supabase.com](https://supabase.com).
-2. Dans **SQL Editor**, colle le contenu de `supabase/schema.sql` et exécute-le.
-   Il crée les tables (`items`, `customers`, `rentals`, `rental_items`), les
-   règles d'accès (RLS) et les fonctions utilisées pour créer/terminer/annuler
-   une location. Le fichier est rejouable sans risque : réexécute-le après
-   chaque mise à jour.
-3. Dans **Storage**, crée un bucket nommé `item-photos`, coché **Public**
-   (pour que les photos s'affichent directement). Les policies qui autorisent
-   l'équipe à uploader/supprimer des photos sont déjà dans `schema.sql`.
-4. Dans **Authentication > Users**, ajoute un compte par membre de l'équipe
-   (email + mot de passe) — c'est ce qui sert à se connecter à l'appli.
-5. Dans **Project Settings > API**, récupère l'URL du projet et la clé
-   `anon public`.
+1. Create an account and a project on [supabase.com](https://supabase.com).
+2. In **SQL Editor**, paste the contents of `supabase/schema.sql` and run it.
+   It creates the tables (`items`, `customers`, `rentals`, `rental_items`),
+   the access rules (RLS), and the functions used to create/complete/cancel a
+   rental. The file is safe to re-run: run it again after every update.
+3. In **Storage**, create a bucket named `item-photos`, checked **Public**
+   (so photos display directly). The policies that let the team upload/delete
+   photos are already in `schema.sql`.
+4. In **Authentication > Users**, add an account per team member (email +
+   password) — that's what's used to sign in to the app.
+5. In **Project Settings > API**, grab the project URL and the `anon public`
+   key.
 
-### 2. Configurer le projet en local
+### 2. Configure the project locally
 
 ```bash
 git clone https://github.com/SlypTom/DirndlLocations.git
@@ -72,73 +70,72 @@ cd DirndlLocations
 cp .env.local.example .env.local
 ```
 
-Ouvre `.env.local` et renseigne l'URL et la clé récupérées à l'étape
-précédente.
+Open `.env.local` and fill in the URL and key from the previous step.
 
 ```bash
 npm install
 npm run dev
 ```
 
-Ouvre [http://localhost:3000](http://localhost:3000) — tu devrais arriver sur
-l'écran de connexion.
+Open [http://localhost:3000](http://localhost:3000) — you should land on the
+sign-in screen.
 
-### 3. Déployer (Vercel)
+### 3. Deploy (Vercel)
 
-1. Pousse le projet sur GitHub (déjà fait si tu lis ceci ici).
-2. Sur [Vercel](https://vercel.com), "Add New Project" > importe le dépôt.
-3. Ajoute `NEXT_PUBLIC_SUPABASE_URL` et `NEXT_PUBLIC_SUPABASE_ANON_KEY` dans
-   les variables d'environnement du projet.
-4. Déploie — Vercel fournit une URL du type `https://ton-projet.vercel.app`.
+1. Push the project to GitHub (already done if you're reading this here).
+2. On [Vercel](https://vercel.com), "Add New Project" > import the repo.
+3. Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` as
+   environment variables on the project.
+4. Deploy — Vercel gives you a URL like `https://your-project.vercel.app`.
 
-## Utilisation au quotidien
+## Day-to-day use
 
-Sur iPad, ouvre l'adresse de l'app dans Safari puis **Partager > Sur l'écran
-d'accueil** : elle s'ouvre ensuite en plein écran comme une application
-native. Sur MacBook, l'URL suffit dans un navigateur classique.
+On iPad, open the app's URL in Safari, then **Share > Add to Home Screen**:
+it then opens full-screen like a native app. On MacBook, the URL works fine
+in a regular browser.
 
-## Structure du projet
+## Project structure
 
 ```
 app/
-  page.tsx                tableau de bord (compteurs, retards)
-  login/page.tsx          connexion
-  items/page.tsx          liste des articles (vue liste/galerie)
-  items/new/page.tsx      ajouter un article (avec photo)
-  items/[id]/page.tsx     détail d'un article (modifier / supprimer)
-  customers/page.tsx      liste des clients (modifier / supprimer)
-  customers/new/page.tsx  ajouter un client
-  rentals/page.tsx        locations en cours (modifier / retour / annuler)
-  rentals/new/page.tsx    créer une location
+  page.tsx                dashboard (counters, overdue returns)
+  login/page.tsx          sign in
+  items/page.tsx          item list (list/gallery view)
+  items/new/page.tsx      add an item (with photo)
+  items/[id]/page.tsx     item detail (edit / delete)
+  customers/page.tsx      customer list (edit / delete)
+  customers/new/page.tsx  add a customer
+  rentals/page.tsx        active rentals (edit / return / cancel)
+  rentals/new/page.tsx    create a rental
 lib/
-  supabase/client.ts      connexion à Supabase
-  auth-context.tsx        gère la session et protège les pages
-  types.ts                types TypeScript des données
-  dates.ts                date du jour en heure locale (pas UTC)
-  item-photos.ts          upload / suppression des photos d'articles
+  supabase/client.ts      Supabase connection
+  auth-context.tsx        manages the session and guards pages
+  types.ts                TypeScript types for the data
+  dates.ts                today's date in local time (not UTC)
+  item-photos.ts          upload / delete item photos
 components/
   NavBar.tsx, StatusBadge.tsx, ItemForm.tsx, ItemPhoto.tsx
 supabase/
-  schema.sql              tables, policies RLS et fonctions RPC
+  schema.sql              tables, RLS policies and RPC functions
 ```
 
-## Sécurité
+## Security
 
-- Accès aux données protégé par Row Level Security côté Supabase : seuls les
-  comptes authentifiés de l'équipe peuvent lire/écrire.
-- Les photos d'articles suivent le même principe côté Storage (lecture
-  publique, upload/suppression réservés à l'équipe).
-- Aucun secret n'est versionné : `.env.local` est ignoré par Git, et la clé
-  Supabase publique (`anon`) n'a jamais de valeur par défaut en dur dans le
-  code — sans configuration, la connexion échoue proprement plutôt que de
-  pointer vers un projet existant par erreur.
+- Data access is protected by Row Level Security on the Supabase side: only
+  authenticated team accounts can read/write.
+- Item photos follow the same principle on the Storage side (public read,
+  upload/delete restricted to the team).
+- No secrets are committed: `.env.local` is git-ignored, and the public
+  Supabase (`anon`) key never has a hardcoded fallback in the code — without
+  configuration, the connection fails cleanly instead of silently pointing at
+  an existing project.
 
-## Pistes d'amélioration
+## Ideas for later
 
-- QR code par article + scan à la caméra pour aller plus vite au comptoir.
-- Rappels automatiques avant une date de retour.
-- Export CSV des locations pour la comptabilité.
+- A QR code per item + camera scanning to speed up checkout at the counter.
+- Automatic reminders before a due date.
+- CSV export of rentals for accounting.
 
 ---
 
-Projet interne et privé, non destiné à la distribution publique.
+Internal, private project — not intended for public distribution.
