@@ -22,6 +22,7 @@ export default function RentalsPage() {
     const { data, error } = await supabase
       .from("rentals")
       .select("*, customer:customers(*), rental_items(*, item:items(*))")
+      .eq("statut", "en_cours")
       .order("date_debut", { ascending: false });
     if (error) setError(error.message);
     else setRentals((data as unknown as Rental[]) ?? []);
@@ -56,6 +57,12 @@ export default function RentalsPage() {
         .in("id", itemIds);
       if (itemsError) setError(itemsError.message);
     }
+
+    const { error: unlinkError } = await supabase
+      .from("rental_items")
+      .delete()
+      .eq("rental_id", rental.id);
+    if (unlinkError) setError(unlinkError.message);
 
     await load();
     setReturning(null);
