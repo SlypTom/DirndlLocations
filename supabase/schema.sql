@@ -121,17 +121,26 @@ as $$
 declare
   v_rental_id uuid;
   v_unavailable text;
+  v_item record;
 begin
   if p_item_ids is null or array_length(p_item_ids, 1) is null then
     raise exception 'Aucun article sélectionné.';
   end if;
 
-  select string_agg(reference, ', ')
-    into v_unavailable
+  -- FOR UPDATE ne peut pas se combiner à une fonction d'agrégation (string_agg)
+  -- dans la même requête : on verrouille les lignes ici, puis on construit la
+  -- liste des indisponibles à la main dans la boucle.
+  v_unavailable := null;
+  for v_item in
+    select reference, statut
     from items
     where id = any(p_item_ids)
-      and statut <> 'disponible'
-    for update;
+    for update
+  loop
+    if v_item.statut <> 'disponible' then
+      v_unavailable := concat_ws(', ', v_unavailable, v_item.reference);
+    end if;
+  end loop;
 
   if v_unavailable is not null then
     raise exception 'Article(s) déjà indisponible(s) : %', v_unavailable;
