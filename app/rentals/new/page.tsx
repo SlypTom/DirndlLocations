@@ -6,7 +6,15 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { todayLocalStr } from "@/lib/dates";
 import type { Customer, Item } from "@/lib/types";
+import { ITEM_STATUS_LABELS } from "@/lib/types";
 import ItemPhoto from "@/components/ItemPhoto";
+import StatusBadge from "@/components/StatusBadge";
+
+interface OccupiedWindow {
+  item_id: string;
+  date_debut: string;
+  date_fin_prevue: string;
+}
 
 export default function NewRentalPage() {
   return (
@@ -22,6 +30,7 @@ function NewRentalForm() {
   const preselectedCustomerId = searchParams.get("customerId");
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [availableItems, setAvailableItems] = useState<Item[]>([]);
+  const [occupiedWindows, setOccupiedWindows] = useState<OccupiedWindow[]>([]);
   const [customerId, setCustomerId] = useState(preselectedCustomerId ?? "");
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   const [itemSearch, setItemSearch] = useState("");
@@ -34,16 +43,34 @@ function NewRentalForm() {
 
   useEffect(() => {
     async function load() {
-      const [customersRes, itemsRes] = await Promise.all([
+      const [customersRes, itemsRes, windowsRes] = await Promise.all([
         supabase.from("customers").select("*").order("nom"),
         supabase
           .from("items")
           .select("*")
-          .eq("statut", "disponible")
+          .in("statut", ["disponible", "loue"])
           .order("reference"),
+        supabase
+          .from("rental_items")
+          .select("item_id, rentals!inner(date_debut, date_fin_prevue, statut)")
+          .eq("rentals.statut", "en_cours"),
       ]);
       if (customersRes.data) setCustomers(customersRes.data);
       if (itemsRes.data) setAvailableItems(itemsRes.data);
+      if (windowsRes.data) {
+        setOccupiedWindows(
+          (
+            windowsRes.data as unknown as {
+              item_id: string;
+              rentals: { date_debut: string; date_fin_prevue: string };
+            }[]
+          ).map((w) => ({
+            item_id: w.item_id,
+            date_debut: w.rentals.date_debut,
+            date_fin_prevue: w.rentals.date_fin_prevue,
+          }))
+        );
+      }
       setLoading(false);
     }
     load();
@@ -54,14 +81,29 @@ function NewRentalForm() {
     [availableItems, selectedItemIds]
   );
 
+  const conflictingItemIds = useMemo(() => {
+    if (!dateDebut || !dateFin) return new Set<string>();
+    return new Set(
+      occupiedWindows
+        .filter((w) => w.date_debut <= dateFin && w.date_fin_prevue >= dateDebut)
+        .map((w) => w.item_id)
+    );
+  }, [occupiedWindows, dateDebut, dateFin]);
+
   const filteredItems = useMemo(
     () =>
-      availableItems.filter((item) =>
-        `${item.reference} ${item.modele} ${item.taille} ${item.couleur}`
-          .toLowerCase()
-          .includes(itemSearch.toLowerCase())
-      ),
-    [availableItems, itemSearch]
+      availableItems
+        .filter(
+          (item) =>
+            selectedItemIds.includes(item.id) ||
+            !conflictingItemIds.has(item.id)
+        )
+        .filter((item) =>
+          `${item.reference} ${item.modele} ${item.taille} ${item.couleur}`
+            .toLowerCase()
+            .includes(itemSearch.toLowerCase())
+        ),
+    [availableItems, itemSearch, selectedItemIds, conflictingItemIds]
   );
 
   const suggestedTotal = useMemo(
@@ -93,6 +135,7 @@ function NewRentalForm() {
       p_date_fin_prevue: dateFin,
       p_prix_total: Number(displayedPrix) || suggestedTotal,
       p_item_ids: selectedItemIds,
+      p_today: todayLocalStr(),
     });
 
     setSaving(false);
@@ -140,6 +183,27 @@ function NewRentalForm() {
           </div>
         </label>
 
+        <div className="grid grid-cols-2 gap-4">
+          <label className="block text-sm font-medium">
+            Date de début
+            <input
+              type="date"
+              value={dateDebut}
+              onChange={(e) => setDateDebut(e.target.value)}
+              className="input mt-1"
+            />
+          </label>
+          <label className="block text-sm font-medium">
+            Retour prévu
+            <input
+              type="date"
+              value={dateFin}
+              onChange={(e) => setDateFin(e.target.value)}
+              className="input mt-1"
+            />
+          </label>
+        </div>
+
         <div>
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium">Articles disponibles</p>
@@ -150,6 +214,10 @@ function NewRentalForm() {
               </p>
             )}
           </div>
+          <p className="mt-0.5 text-xs text-foreground/60">
+            Un article déjà loué reste réservable sur des dates libres — il
+            apparaît alors avec son statut actuel.
+          </p>
 
           {availableItems.length === 0 ? (
             <p className="mt-1 text-sm text-foreground/60">
@@ -210,6 +278,12 @@ function NewRentalForm() {
                           {item.reference} — {item.modele} ({item.taille},{" "}
                           {item.couleur})
                         </span>
+                        {item.statut !== "disponible" && (
+                          <StatusBadge
+                            status={item.statut}
+                            label={ITEM_STATUS_LABELS[item.statut]}
+                          />
+                        )}
                       </span>
                       <span className="shrink-0 text-foreground/60">
                         {item.prix_location} €
@@ -220,27 +294,6 @@ function NewRentalForm() {
               </div>
             </>
           )}
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <label className="block text-sm font-medium">
-            Date de début
-            <input
-              type="date"
-              value={dateDebut}
-              onChange={(e) => setDateDebut(e.target.value)}
-              className="input mt-1"
-            />
-          </label>
-          <label className="block text-sm font-medium">
-            Retour prévu
-            <input
-              type="date"
-              value={dateFin}
-              onChange={(e) => setDateFin(e.target.value)}
-              className="input mt-1"
-            />
-          </label>
         </div>
 
         <label className="block text-sm font-medium">

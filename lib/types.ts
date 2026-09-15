@@ -39,6 +39,7 @@ export interface Rental {
   date_retour_reelle: string | null;
   prix_total: number;
   statut: RentalStatus;
+  paye: boolean;
   notes: string | null;
   created_at: string;
   customer?: Customer;

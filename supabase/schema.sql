@@ -40,6 +40,7 @@ create table if not exists rentals (
   prix_total numeric(8, 2) not null default 0,
   statut text not null default 'en_cours'
     check (statut in ('en_cours', 'terminee', 'annulee')),
+  paye boolean not null default false,
   notes text,
   created_at timestamptz not null default now()
 );
@@ -47,6 +48,9 @@ create table if not exists rentals (
 -- La boutique ne demande pas de caution : on retire ces colonnes si elles existent.
 alter table rentals drop column if exists caution_montant;
 alter table rentals drop column if exists caution_rendue;
+
+-- Si la table rentals existait déjà avant l'ajout du statut de paiement.
+alter table rentals add column if not exists paye boolean not null default false;
 
 create table if not exists rental_items (
   rental_id uuid not null references rentals(id) on delete cascade,
@@ -104,15 +108,27 @@ create policy "Équipe : suppression des photos d'articles" on storage.objects
 -- Fonctions RPC : regroupent en une seule transaction les opérations qui
 -- touchent plusieurs tables (location + lignes d'articles + statut des
 -- articles), pour éviter les données à moitié écrites si une étape échoue,
--- et pour empêcher deux personnes de louer le même article en même temps
--- (verrouillage des lignes concernées le temps de la transaction).
+-- et pour empêcher deux personnes de louer le même article sur des dates qui
+-- se chevauchent (verrouillage des lignes concernées le temps de la
+-- transaction). Un article "loué" reste réservable sur des dates libres :
+-- seuls "à nettoyer" et "en réparation" bloquent totalement un article, peu
+-- importe les dates. Le champ items.statut ne reflète que l'état physique
+-- actuel ; la vraie disponibilité sur une période donnée se vérifie via les
+-- dates des locations en cours, pas uniquement via ce statut.
+
+-- Anciennes signatures (avant l'ajout de p_today) : à supprimer explicitement,
+-- sinon "create or replace" avec une liste de paramètres différente crée une
+-- fonction surchargée au lieu de remplacer l'existante.
+drop function if exists create_rental(uuid, date, date, numeric, uuid[]);
+drop function if exists cancel_rental(uuid);
 
 create or replace function create_rental(
   p_customer_id uuid,
   p_date_debut date,
   p_date_fin_prevue date,
   p_prix_total numeric,
-  p_item_ids uuid[]
+  p_item_ids uuid[],
+  p_today date
 ) returns uuid
 language plpgsql
 security invoker
@@ -137,13 +153,27 @@ begin
     where id = any(p_item_ids)
     for update
   loop
-    if v_item.statut <> 'disponible' then
+    if v_item.statut in ('nettoyage', 'reparation') then
       v_unavailable := concat_ws(', ', v_unavailable, v_item.reference);
     end if;
   end loop;
 
   if v_unavailable is not null then
-    raise exception 'Article(s) déjà indisponible(s) : %', v_unavailable;
+    raise exception 'Article(s) indisponible(s) (à nettoyer ou en réparation) : %', v_unavailable;
+  end if;
+
+  select string_agg(distinct i.reference, ', ')
+    into v_unavailable
+  from rental_items ri
+  join rentals r on r.id = ri.rental_id
+  join items i on i.id = ri.item_id
+  where ri.item_id = any(p_item_ids)
+    and r.statut = 'en_cours'
+    and r.date_debut <= p_date_fin_prevue
+    and r.date_fin_prevue >= p_date_debut;
+
+  if v_unavailable is not null then
+    raise exception 'Article(s) déjà réservé(s) sur ces dates : %', v_unavailable;
   end if;
 
   insert into rentals (customer_id, date_debut, date_fin_prevue, prix_total, statut)
@@ -155,7 +185,12 @@ begin
   from items i
   where i.id = any(p_item_ids);
 
-  update items set statut = 'loue' where id = any(p_item_ids);
+  -- Une réservation future ne "sort" pas l'article du magasin tout de suite :
+  -- on ne bascule le statut physique que si la location démarre aujourd'hui
+  -- ou avant.
+  if p_date_debut <= p_today then
+    update items set statut = 'loue' where id = any(p_item_ids);
+  end if;
 
   return v_rental_id;
 end;
@@ -167,41 +202,51 @@ language plpgsql
 security invoker
 set search_path = public, pg_temp
 as $$
+declare
+  v_date_debut date;
 begin
   update rentals
     set statut = 'terminee', date_retour_reelle = p_date_retour
-    where id = p_rental_id and statut = 'en_cours';
+    where id = p_rental_id and statut = 'en_cours'
+    returning date_debut into v_date_debut;
 
   if not found then
     raise exception 'Location introuvable ou déjà clôturée.';
   end if;
 
-  update items
-    set statut = 'nettoyage'
-    where id in (select item_id from rental_items where rental_id = p_rental_id);
+  if v_date_debut <= p_date_retour then
+    update items
+      set statut = 'nettoyage'
+      where id in (select item_id from rental_items where rental_id = p_rental_id);
+  end if;
 
   delete from rental_items where rental_id = p_rental_id;
 end;
 $$;
 
-create or replace function cancel_rental(p_rental_id uuid)
+create or replace function cancel_rental(p_rental_id uuid, p_today date)
 returns void
 language plpgsql
 security invoker
 set search_path = public, pg_temp
 as $$
+declare
+  v_date_debut date;
 begin
   update rentals
     set statut = 'annulee'
-    where id = p_rental_id and statut = 'en_cours';
+    where id = p_rental_id and statut = 'en_cours'
+    returning date_debut into v_date_debut;
 
   if not found then
     raise exception 'Location introuvable ou déjà clôturée.';
   end if;
 
-  update items
-    set statut = 'disponible'
-    where id in (select item_id from rental_items where rental_id = p_rental_id);
+  if v_date_debut <= p_today then
+    update items
+      set statut = 'disponible'
+      where id in (select item_id from rental_items where rental_id = p_rental_id);
+  end if;
 
   delete from rental_items where rental_id = p_rental_id;
 end;

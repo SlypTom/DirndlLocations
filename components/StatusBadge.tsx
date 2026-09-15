@@ -7,6 +7,7 @@ const STYLES: Record<string, string> = {
   terminee: "bg-primary/10 text-primary-dark",
   annulee: "bg-foreground/10 text-foreground/70",
   en_retard: "bg-danger-light text-danger",
+  a_venir: "bg-accent-light text-accent",
 };
 
 export default function StatusBadge({
