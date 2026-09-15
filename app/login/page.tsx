@@ -38,7 +38,7 @@ export default function LoginPage() {
         className="w-full max-w-sm rounded-xl border border-border bg-surface p-8 shadow-sm"
       >
         <h1 className="font-heading text-2xl text-primary-dark">
-          Trachten Locations
+          Dirndl Locations
         </h1>
         <p className="mt-1 text-sm text-foreground/60">
           Connecte-toi avec le compte de la boutique.
