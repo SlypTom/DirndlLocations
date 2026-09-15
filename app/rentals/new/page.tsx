@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { todayLocalStr } from "@/lib/dates";
 import type { Customer, Item } from "@/lib/types";
+import ItemPhoto from "@/components/ItemPhoto";
 
 export default function NewRentalPage() {
   return (
@@ -23,6 +24,7 @@ function NewRentalForm() {
   const [availableItems, setAvailableItems] = useState<Item[]>([]);
   const [customerId, setCustomerId] = useState(preselectedCustomerId ?? "");
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
+  const [itemSearch, setItemSearch] = useState("");
   const [dateDebut, setDateDebut] = useState(todayLocalStr());
   const [dateFin, setDateFin] = useState(todayLocalStr());
   const [prixOverride, setPrixOverride] = useState<string | null>(null);
@@ -50,6 +52,16 @@ function NewRentalForm() {
   const selectedItems = useMemo(
     () => availableItems.filter((i) => selectedItemIds.includes(i.id)),
     [availableItems, selectedItemIds]
+  );
+
+  const filteredItems = useMemo(
+    () =>
+      availableItems.filter((item) =>
+        `${item.reference} ${item.modele} ${item.taille} ${item.couleur}`
+          .toLowerCase()
+          .includes(itemSearch.toLowerCase())
+      ),
+    [availableItems, itemSearch]
   );
 
   const suggestedTotal = useMemo(
@@ -129,33 +141,84 @@ function NewRentalForm() {
         </label>
 
         <div>
-          <p className="text-sm font-medium">Articles disponibles</p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium">Articles disponibles</p>
+            {selectedItems.length > 0 && (
+              <p className="text-xs text-foreground/60">
+                {selectedItems.length} sélectionné
+                {selectedItems.length > 1 ? "s" : ""}
+              </p>
+            )}
+          </div>
+
           {availableItems.length === 0 ? (
             <p className="mt-1 text-sm text-foreground/60">
               Aucun article disponible actuellement.
             </p>
           ) : (
-            <div className="mt-1 max-h-64 space-y-1 overflow-y-auto rounded-lg border border-border bg-surface p-2">
-              {availableItems.map((item) => (
-                <label
-                  key={item.id}
-                  className="flex cursor-pointer items-center justify-between rounded-md px-2 py-2 text-sm hover:bg-accent-light"
-                >
-                  <span className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedItemIds.includes(item.id)}
-                      onChange={() => toggleItem(item.id)}
-                    />
-                    {item.reference} — {item.modele} ({item.taille},{" "}
-                    {item.couleur})
-                  </span>
-                  <span className="text-foreground/60">
-                    {item.prix_location} €
-                  </span>
-                </label>
-              ))}
-            </div>
+            <>
+              {selectedItems.length > 0 && (
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {selectedItems.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => toggleItem(item.id)}
+                      className="flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary-dark hover:bg-primary/20"
+                    >
+                      {item.reference}
+                      <span aria-hidden="true">×</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <input
+                type="search"
+                placeholder="Rechercher par référence, modèle, taille, couleur..."
+                value={itemSearch}
+                onChange={(e) => setItemSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") e.preventDefault();
+                }}
+                className="input mt-2"
+              />
+
+              <div className="mt-2 max-h-64 space-y-1 overflow-y-auto rounded-lg border border-border bg-surface p-2">
+                {filteredItems.length === 0 ? (
+                  <p className="px-2 py-2 text-sm text-foreground/60">
+                    Aucun article ne correspond à la recherche.
+                  </p>
+                ) : (
+                  filteredItems.map((item) => (
+                    <label
+                      key={item.id}
+                      className="flex cursor-pointer items-center justify-between gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent-light"
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedItemIds.includes(item.id)}
+                          onChange={() => toggleItem(item.id)}
+                        />
+                        <ItemPhoto
+                          url={item.photo_url}
+                          alt={item.reference}
+                          className="h-8 w-8 shrink-0 rounded-md border border-border"
+                        />
+                        <span className="truncate">
+                          {item.reference} — {item.modele} ({item.taille},{" "}
+                          {item.couleur})
+                        </span>
+                      </span>
+                      <span className="shrink-0 text-foreground/60">
+                        {item.prix_location} €
+                      </span>
+                    </label>
+                  ))
+                )}
+              </div>
+            </>
           )}
         </div>
 
