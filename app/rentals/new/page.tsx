@@ -6,7 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { todayLocalStr } from "@/lib/dates";
 import type { Customer, Item } from "@/lib/types";
-import { ITEM_STATUS_LABELS } from "@/lib/types";
+import { ITEM_CATEGORY_LABELS, ITEM_STATUS_LABELS } from "@/lib/types";
 import ItemPhoto from "@/components/ItemPhoto";
 import StatusBadge from "@/components/StatusBadge";
 
@@ -99,7 +99,7 @@ function NewRentalForm() {
             !conflictingItemIds.has(item.id)
         )
         .filter((item) =>
-          `${item.reference} ${item.modele} ${item.taille} ${item.couleur}`
+          `${item.reference} ${item.modele} ${item.taille} ${item.couleur} ${ITEM_CATEGORY_LABELS[item.categorie]}`
             .toLowerCase()
             .includes(itemSearch.toLowerCase())
         ),

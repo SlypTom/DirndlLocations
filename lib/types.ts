@@ -1,4 +1,9 @@
 export type ItemStatus = "disponible" | "loue" | "nettoyage" | "reparation";
+export type ItemCategory =
+  | "dirndl"
+  | "chemise_femme"
+  | "chemise_homme"
+  | "lederhose";
 export type RentalStatus = "en_cours" | "terminee" | "annulee";
 
 export interface Item {
@@ -10,6 +15,7 @@ export interface Item {
   etat: string;
   prix_location: number;
   statut: ItemStatus;
+  categorie: ItemCategory;
   photo_url: string | null;
   created_at: string;
 }
@@ -52,6 +58,20 @@ export const ITEM_STATUS_LABELS: Record<ItemStatus, string> = {
   nettoyage: "À nettoyer",
   reparation: "En réparation",
 };
+
+export const ITEM_CATEGORY_LABELS: Record<ItemCategory, string> = {
+  dirndl: "Dirndl",
+  chemise_femme: "Chemise femme",
+  chemise_homme: "Chemise homme",
+  lederhose: "Lederhose",
+};
+
+export const ITEM_CATEGORIES: ItemCategory[] = [
+  "dirndl",
+  "chemise_femme",
+  "chemise_homme",
+  "lederhose",
+];
 
 export const RENTAL_STATUS_LABELS: Record<RentalStatus, string> = {
   en_cours: "En cours",

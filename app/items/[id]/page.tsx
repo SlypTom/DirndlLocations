@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import type { Item, ItemStatus } from "@/lib/types";
-import { ITEM_STATUS_LABELS } from "@/lib/types";
+import { ITEM_CATEGORY_LABELS, ITEM_STATUS_LABELS } from "@/lib/types";
 import StatusBadge from "@/components/StatusBadge";
 import ItemPhoto from "@/components/ItemPhoto";
 import ItemForm, { type ItemFormPayload } from "@/components/ItemForm";
@@ -148,6 +148,7 @@ export default function ItemDetailPage() {
             initialValues={{
               reference: item.reference,
               modele: item.modele,
+              categorie: item.categorie,
               taille: item.taille,
               couleur: item.couleur,
               etat: item.etat,
@@ -181,6 +182,9 @@ export default function ItemDetailPage() {
                 {item.reference}
               </h1>
               <p className="text-foreground/70">{item.modele}</p>
+              <p className="text-sm text-foreground/60">
+                {ITEM_CATEGORY_LABELS[item.categorie]}
+              </p>
               <div className="flex flex-wrap items-center gap-2">
                 <StatusBadge
                   status={item.statut}

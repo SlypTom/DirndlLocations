@@ -1,6 +1,6 @@
 # Dirndl Locations
 
-*Lire en [français](README.md).*
+*Lire en [français](README.fr.md).*
 
 Internal rental-management app for dirndls (traditional Austrian dresses):
 tracks the item stock, customers, and active rentals from checkout through
@@ -13,16 +13,20 @@ on iPad and MacBook.
 
 **Items**
 - List or photo-gallery view, search by reference / model / size / color
+- Categories (Dirndl, Women's shirt, Men's shirt, Lederhosen) with a filter
 - Detail page with edit and delete
 - Lifecycle statuses: available, rented, needs cleaning, under repair
 
 **Rentals**
 - Create with multi-item selection (built-in search, already-picked items
   always visible), pick an existing customer or create one on the fly
+- An already-rented item stays bookable on free dates (no double-booking on
+  overlapping dates)
 - One-click return and cancellation — items automatically flip to the right
   status
 - Edit dates and price directly from the list
-- Overdue detection
+- Paid / unpaid status
+- Overdue and upcoming rental detection
 
 **Customers**
 - Full profile (contact info, address, notes), inline edit and delete

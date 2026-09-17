@@ -1,6 +1,6 @@
 # Dirndl Locations
 
-*Read this in [English](README.en.md).*
+*Read this in [English](README.md).*
 
 Application interne de gestion de location de dirndls (tenues traditionnelles
 autrichiennes) : suivi du stock d'articles, des clients et des locations en
@@ -13,16 +13,20 @@ quotidien en boutique sur iPad et MacBook.
 
 **Articles**
 - Vue liste ou galerie photo, recherche par référence / modèle / taille / couleur
+- Catégories (Dirndl, Chemise femme, Chemise homme, Lederhose) avec filtre dédié
 - Fiche détail avec modification et suppression
 - Statuts de cycle de vie : disponible, loué, à nettoyer, en réparation
 
 **Locations**
 - Création avec sélection multi-articles (recherche intégrée, articles déjà
   choisis toujours visibles), client existant ou nouveau créé à la volée
+- Un article déjà loué reste réservable sur des dates libres (pas de double
+  réservation possible sur des dates qui se chevauchent)
 - Retour et annulation en un clic — les articles repassent automatiquement
   au bon statut
 - Modification des dates et du prix directement depuis la liste
-- Détection des retards
+- Statut payé / non payé
+- Détection des retards et des locations à venir
 
 **Clients**
 - Fiche complète (contact, adresse, notes), modification et suppression

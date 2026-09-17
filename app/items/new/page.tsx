@@ -23,6 +23,7 @@ export default function NewItemPage() {
         initialValues={{
           reference: "",
           modele: "",
+          categorie: "dirndl",
           taille: "",
           couleur: "",
           etat: "Bon état",

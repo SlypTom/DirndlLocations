@@ -3,10 +3,16 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { deleteItemPhoto, uploadItemPhoto } from "@/lib/item-photos";
 import ItemPhoto from "@/components/ItemPhoto";
+import {
+  ITEM_CATEGORIES,
+  ITEM_CATEGORY_LABELS,
+  type ItemCategory,
+} from "@/lib/types";
 
 export interface ItemFormValues {
   reference: string;
   modele: string;
+  categorie: ItemCategory;
   taille: string;
   couleur: string;
   etat: string;
@@ -16,6 +22,7 @@ export interface ItemFormValues {
 export interface ItemFormPayload {
   reference: string;
   modele: string;
+  categorie: ItemCategory;
   taille: string;
   couleur: string;
   etat: string;
@@ -80,6 +87,7 @@ export default function ItemForm({
     const submitError = await onSubmit({
       reference: form.reference,
       modele: form.modele,
+      categorie: form.categorie,
       taille: form.taille,
       couleur: form.couleur,
       etat: form.etat,
@@ -131,6 +139,19 @@ export default function ItemForm({
           className="input"
           placeholder="Dirndl Trachten vert bouteille"
         />
+      </Field>
+      <Field label="Catégorie">
+        <select
+          value={form.categorie}
+          onChange={(e) => update("categorie", e.target.value)}
+          className="input"
+        >
+          {ITEM_CATEGORIES.map((c) => (
+            <option key={c} value={c}>
+              {ITEM_CATEGORY_LABELS[c]}
+            </option>
+          ))}
+        </select>
       </Field>
       <div className="grid grid-cols-2 gap-4">
         <Field label="Taille">

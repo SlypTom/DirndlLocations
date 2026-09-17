@@ -4,8 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
-import type { Item, ItemStatus } from "@/lib/types";
-import { ITEM_STATUS_LABELS } from "@/lib/types";
+import type { Item, ItemCategory, ItemStatus } from "@/lib/types";
+import {
+  ITEM_CATEGORIES,
+  ITEM_CATEGORY_LABELS,
+  ITEM_STATUS_LABELS,
+} from "@/lib/types";
 import StatusBadge from "@/components/StatusBadge";
 import ItemPhoto from "@/components/ItemPhoto";
 
@@ -17,6 +21,7 @@ const STATUS_OPTIONS: ItemStatus[] = [
 ];
 
 type ViewMode = "list" | "grid";
+type CategoryFilter = ItemCategory | "all";
 
 export default function ItemsPage() {
   const router = useRouter();
@@ -25,6 +30,7 @@ export default function ItemsPage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
 
   useEffect(() => {
     async function load() {
@@ -52,11 +58,15 @@ export default function ItemsPage() {
     }
   }
 
-  const filtered = items.filter((item) =>
-    `${item.reference} ${item.modele} ${item.taille} ${item.couleur}`
-      .toLowerCase()
-      .includes(search.toLowerCase())
-  );
+  const filtered = items
+    .filter(
+      (item) => categoryFilter === "all" || item.categorie === categoryFilter
+    )
+    .filter((item) =>
+      `${item.reference} ${item.modele} ${item.taille} ${item.couleur} ${ITEM_CATEGORY_LABELS[item.categorie]}`
+        .toLowerCase()
+        .includes(search.toLowerCase())
+    );
 
   return (
     <div className="space-y-6">
@@ -79,6 +89,22 @@ export default function ItemsPage() {
           className="input flex-1"
         />
         <ViewModeToggle mode={viewMode} onChange={setViewMode} />
+      </div>
+
+      <div className="flex flex-wrap gap-1.5">
+        <CategoryChip
+          label="Toutes"
+          active={categoryFilter === "all"}
+          onClick={() => setCategoryFilter("all")}
+        />
+        {ITEM_CATEGORIES.map((c) => (
+          <CategoryChip
+            key={c}
+            label={ITEM_CATEGORY_LABELS[c]}
+            active={categoryFilter === c}
+            onClick={() => setCategoryFilter(c)}
+          />
+        ))}
       </div>
 
       {error && (
@@ -112,7 +138,8 @@ export default function ItemsPage() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{item.reference}</p>
                     <p className="truncate text-sm text-foreground/60">
-                      {item.modele} — {item.taille}, {item.couleur}
+                      {ITEM_CATEGORY_LABELS[item.categorie]} · {item.modele} —{" "}
+                      {item.taille}, {item.couleur}
                     </p>
                   </div>
                   <span className="shrink-0 text-sm font-medium">
@@ -151,6 +178,7 @@ export default function ItemsPage() {
                 <tr className="border-b border-border text-left text-foreground/60">
                   <th className="px-4 py-3 font-medium">Référence</th>
                   <th className="px-4 py-3 font-medium">Modèle</th>
+                  <th className="px-4 py-3 font-medium">Catégorie</th>
                   <th className="px-4 py-3 font-medium">Taille</th>
                   <th className="px-4 py-3 font-medium">Couleur</th>
                   <th className="px-4 py-3 font-medium">Prix</th>
@@ -175,6 +203,9 @@ export default function ItemsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3">{item.modele}</td>
+                    <td className="px-4 py-3">
+                      {ITEM_CATEGORY_LABELS[item.categorie]}
+                    </td>
                     <td className="px-4 py-3">{item.taille}</td>
                     <td className="px-4 py-3">{item.couleur}</td>
                     <td className="px-4 py-3">{item.prix_location} €</td>
@@ -221,7 +252,7 @@ export default function ItemsPage() {
               <div className="space-y-1 p-3">
                 <p className="font-medium">{item.reference}</p>
                 <p className="truncate text-xs text-foreground/60">
-                  {item.modele}
+                  {ITEM_CATEGORY_LABELS[item.categorie]} · {item.modele}
                 </p>
                 <div className="flex items-center justify-between pt-1">
                   <StatusBadge
@@ -284,5 +315,30 @@ function ViewModeToggle({
         </svg>
       </button>
     </div>
+  );
+}
+
+function CategoryChip({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`rounded-full px-3 py-1 text-xs font-medium ${
+        active
+          ? "bg-primary text-white"
+          : "bg-surface text-foreground/70 hover:bg-accent-light"
+      }`}
+    >
+      {label}
+    </button>
   );
 }

@@ -14,9 +14,17 @@ create table if not exists items (
   prix_location numeric(8, 2) not null default 0,
   statut text not null default 'disponible'
     check (statut in ('disponible', 'loue', 'nettoyage', 'reparation')),
+  categorie text not null default 'dirndl'
+    check (categorie in ('dirndl', 'chemise_femme', 'chemise_homme', 'lederhose')),
   photo_url text,
   created_at timestamptz not null default now()
 );
+
+-- Si la table items existait déjà avant l'ajout des catégories.
+alter table items add column if not exists categorie text not null default 'dirndl';
+alter table items drop constraint if exists items_categorie_check;
+alter table items add constraint items_categorie_check
+  check (categorie in ('dirndl', 'chemise_femme', 'chemise_homme', 'lederhose'));
 
 create table if not exists customers (
   id uuid primary key default gen_random_uuid(),
