@@ -46,6 +46,7 @@ export interface Rental {
   prix_total: number;
   statut: RentalStatus;
   paye: boolean;
+  sorti: boolean;
   notes: string | null;
   created_at: string;
   customer?: Customer;

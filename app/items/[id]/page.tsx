@@ -18,10 +18,17 @@ const STATUS_OPTIONS: ItemStatus[] = [
   "reparation",
 ];
 
+interface Reservation {
+  date_debut: string;
+  date_fin_prevue: string;
+  customerNom: string | null;
+}
+
 export default function ItemDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const [item, setItem] = useState<Item | null>(null);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -30,14 +37,41 @@ export default function ItemDetailPage() {
 
   async function load() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("items")
-      .select("*")
-      .eq("id", params.id)
-      .maybeSingle();
-    if (error) setError(error.message);
-    else if (!data) setNotFound(true);
-    else setItem(data);
+    const [itemRes, reservationsRes] = await Promise.all([
+      supabase.from("items").select("*").eq("id", params.id).maybeSingle(),
+      supabase
+        .from("rental_items")
+        .select(
+          "rental:rentals!inner(date_debut, date_fin_prevue, statut, customer:customers(nom))"
+        )
+        .eq("item_id", params.id)
+        .eq("rental.statut", "en_cours"),
+    ]);
+
+    if (itemRes.error) setError(itemRes.error.message);
+    else if (!itemRes.data) setNotFound(true);
+    else setItem(itemRes.data);
+
+    if (reservationsRes.data) {
+      setReservations(
+        (
+          reservationsRes.data as unknown as {
+            rental: {
+              date_debut: string;
+              date_fin_prevue: string;
+              customer: { nom: string } | null;
+            };
+          }[]
+        )
+          .map((r) => ({
+            date_debut: r.rental.date_debut,
+            date_fin_prevue: r.rental.date_fin_prevue,
+            customerNom: r.rental.customer?.nom ?? null,
+          }))
+          .sort((a, b) => a.date_debut.localeCompare(b.date_debut))
+      );
+    }
+
     setLoading(false);
   }
 
@@ -223,6 +257,33 @@ export default function ItemDetailPage() {
               <dd className="font-medium">{item.prix_location} €</dd>
             </div>
           </dl>
+
+          <div className="rounded-lg border border-border bg-surface p-4">
+            <p className="text-sm font-medium">Réservations en cours</p>
+            {reservations.length === 0 ? (
+              <p className="mt-1 text-sm text-foreground/60">
+                Aucune réservation en cours — l&apos;article est libre pour
+                n&apos;importe quelle date.
+              </p>
+            ) : (
+              <ul className="mt-2 space-y-1.5 text-sm">
+                {reservations.map((r, i) => (
+                  <li key={i} className="flex flex-wrap justify-between gap-2">
+                    <span>
+                      Du{" "}
+                      {new Date(r.date_debut).toLocaleDateString("fr-FR")} au{" "}
+                      {new Date(r.date_fin_prevue).toLocaleDateString(
+                        "fr-FR"
+                      )}
+                    </span>
+                    <span className="text-foreground/60">
+                      {r.customerNom ?? "Client inconnu"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <button

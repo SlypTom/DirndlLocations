@@ -49,6 +49,7 @@ create table if not exists rentals (
   statut text not null default 'en_cours'
     check (statut in ('en_cours', 'terminee', 'annulee')),
   paye boolean not null default false,
+  sorti boolean not null default false,
   notes text,
   created_at timestamptz not null default now()
 );
@@ -57,8 +58,9 @@ create table if not exists rentals (
 alter table rentals drop column if exists caution_montant;
 alter table rentals drop column if exists caution_rendue;
 
--- Si la table rentals existait déjà avant l'ajout du statut de paiement.
+-- Si la table rentals existait déjà avant l'ajout du statut de paiement / de sortie.
 alter table rentals add column if not exists paye boolean not null default false;
+alter table rentals add column if not exists sorti boolean not null default false;
 
 create table if not exists rental_items (
   rental_id uuid not null references rentals(id) on delete cascade,
@@ -201,6 +203,98 @@ begin
   end if;
 
   return v_rental_id;
+end;
+$$;
+
+-- Modifie intégralement une location en cours (client, dates, prix, articles).
+-- Les articles retirés redeviennent disponibles (s'ils étaient "loué" à cause
+-- de cette location) ; les articles ajoutés suivent les mêmes règles que la
+-- création (bloqués si à nettoyer/en réparation, ou déjà réservés sur des
+-- dates qui se chevauchent avec une AUTRE location en cours).
+create or replace function update_rental(
+  p_rental_id uuid,
+  p_customer_id uuid,
+  p_date_debut date,
+  p_date_fin_prevue date,
+  p_prix_total numeric,
+  p_item_ids uuid[],
+  p_today date
+) returns void
+language plpgsql
+security invoker
+set search_path = public, pg_temp
+as $$
+declare
+  v_unavailable text;
+  v_item record;
+  v_removed_items uuid[];
+begin
+  if p_item_ids is null or array_length(p_item_ids, 1) is null then
+    raise exception 'Aucun article sélectionné.';
+  end if;
+
+  perform 1 from rentals where id = p_rental_id and statut = 'en_cours' for update;
+  if not found then
+    raise exception 'Location introuvable ou déjà clôturée.';
+  end if;
+
+  v_unavailable := null;
+  for v_item in
+    select reference, statut
+    from items
+    where id = any(p_item_ids)
+    for update
+  loop
+    if v_item.statut in ('nettoyage', 'reparation') then
+      v_unavailable := concat_ws(', ', v_unavailable, v_item.reference);
+    end if;
+  end loop;
+
+  if v_unavailable is not null then
+    raise exception 'Article(s) indisponible(s) (à nettoyer ou en réparation) : %', v_unavailable;
+  end if;
+
+  select string_agg(distinct i.reference, ', ')
+    into v_unavailable
+  from rental_items ri
+  join rentals r on r.id = ri.rental_id
+  join items i on i.id = ri.item_id
+  where ri.item_id = any(p_item_ids)
+    and r.id <> p_rental_id
+    and r.statut = 'en_cours'
+    and r.date_debut <= p_date_fin_prevue
+    and r.date_fin_prevue >= p_date_debut;
+
+  if v_unavailable is not null then
+    raise exception 'Article(s) déjà réservé(s) sur ces dates : %', v_unavailable;
+  end if;
+
+  select array_agg(item_id) into v_removed_items
+  from rental_items
+  where rental_id = p_rental_id and item_id <> all(p_item_ids);
+
+  if v_removed_items is not null then
+    update items set statut = 'disponible'
+      where id = any(v_removed_items) and statut = 'loue';
+  end if;
+
+  update rentals
+    set customer_id = p_customer_id,
+        date_debut = p_date_debut,
+        date_fin_prevue = p_date_fin_prevue,
+        prix_total = p_prix_total
+    where id = p_rental_id;
+
+  delete from rental_items where rental_id = p_rental_id;
+
+  insert into rental_items (rental_id, item_id, prix_unitaire)
+  select p_rental_id, i.id, i.prix_location
+  from items i
+  where i.id = any(p_item_ids);
+
+  if p_date_debut <= p_today then
+    update items set statut = 'loue' where id = any(p_item_ids);
+  end if;
 end;
 $$;
 
